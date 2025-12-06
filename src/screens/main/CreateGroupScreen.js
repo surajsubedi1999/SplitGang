@@ -160,7 +160,6 @@ const styles = StyleSheet.create({
     marginBottom: SIZES.large,
     fontStyle: 'italic',
   },
-  // Success screen styles
   successContainer: {
     flex: 1,
     justifyContent: 'center',
