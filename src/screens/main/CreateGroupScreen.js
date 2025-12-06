@@ -2,17 +2,25 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { CustomInput, CustomButton } from '../../components';
 import { COLORS, SIZES } from '../../constants/theme';
-import { useAuth } from '../../context';
+import { useAuth, useData } from '../../context';
 import { createGroup } from '../../services';
+
+// Generate a random 6-digit group code
+const generateGroupCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 const CreateGroupScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const { fetchGroups } = useData();
   
-  // Form state using useState - Suraj's responsibility
+  // Form state
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
+  const [memberCount, setMemberCount] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [createdGroupCode, setCreatedGroupCode] = useState(null);
 
   // Basic validation
   const validateForm = () => {
@@ -22,32 +30,70 @@ const CreateGroupScreen = ({ navigation }) => {
       newErrors.groupName = 'Group name is required';
     }
     
+    if (!memberCount.trim()) {
+      newErrors.memberCount = 'Number of members is required';
+    } else if (isNaN(parseInt(memberCount)) || parseInt(memberCount) < 2) {
+      newErrors.memberCount = 'Enter at least 2 members';
+    } else if (parseInt(memberCount) > 20) {
+      newErrors.memberCount = 'Maximum 20 members allowed';
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle group creation with Firebase - Pawan's implementation
+  // Handle group creation
   const handleCreateGroup = async () => {
     if (!validateForm()) return;
     
     setLoading(true);
     
+    const groupCode = generateGroupCode();
+    
     const groupData = {
       name: groupName.trim(),
-      description: description.trim()
+      description: description.trim(),
+      groupCode: groupCode,
+      expectedMembers: parseInt(memberCount),
     };
     
     const result = await createGroup(groupData, user.uid);
     setLoading(false);
     
     if (result.success) {
-      Alert.alert('Success', 'Group created successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      await fetchGroups();
+      setCreatedGroupCode(groupCode);
     } else {
       Alert.alert('Error', result.error);
     }
   };
+
+  // Show success screen with group code
+  if (createdGroupCode) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.successContainer}>
+          <Text style={styles.successTitle}>🎉 Group Created!</Text>
+          <Text style={styles.successSubtitle}>Share this code with your group members:</Text>
+          
+          <View style={styles.codeContainer}>
+            <Text style={styles.groupCode}>{createdGroupCode}</Text>
+          </View>
+          
+          <Text style={styles.instructionText}>
+            Members can join by entering this code in the "Join Group" section.
+          </Text>
+          
+          <View style={styles.successButtons}>
+            <CustomButton
+              title="Done"
+              onPress={() => navigation.goBack()}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,11 +111,24 @@ const CreateGroupScreen = ({ navigation }) => {
         />
 
         <CustomInput
+          label="Number of Members"
+          value={memberCount}
+          onChangeText={setMemberCount}
+          placeholder="How many people in this group?"
+          keyboardType="number-pad"
+          error={errors.memberCount}
+        />
+
+        <CustomInput
           label="Description (Optional)"
           value={description}
           onChangeText={setDescription}
           placeholder="What is this group for?"
         />
+
+        <Text style={styles.infoText}>
+          After creating the group, you'll receive a unique code that others can use to join.
+        </Text>
 
         <CustomButton
           title="Create Group"
@@ -105,6 +164,53 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: SIZES.large,
+  },
+  infoText: {
+    fontSize: 13,
+    color: COLORS.gray,
+    marginBottom: SIZES.large,
+    fontStyle: 'italic',
+  },
+  // Success screen styles
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.xlarge,
+  },
+  successTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: SIZES.base,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: COLORS.gray,
+    marginBottom: SIZES.xlarge,
+    textAlign: 'center',
+  },
+  codeContainer: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.large,
+    paddingHorizontal: SIZES.xlarge * 2,
+    borderRadius: SIZES.base,
+    marginBottom: SIZES.large,
+  },
+  groupCode: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    letterSpacing: 8,
+  },
+  instructionText: {
+    fontSize: 14,
+    color: COLORS.gray,
+    textAlign: 'center',
+    marginBottom: SIZES.xlarge,
+  },
+  successButtons: {
+    width: '100%',
   },
 });
 

@@ -2,34 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import { CustomButton } from '../../components';
 import { COLORS, SIZES } from '../../constants/theme';
-import { useAuth } from '../../context';
-import { getUserGroups } from '../../services';
+import { useAuth, useData } from '../../context';
 
 const ProfileScreen = ({ navigation }) => {
   // Get user and logout from AuthContext - Pawan's implementation
   const { user, logout } = useAuth();
+  // Get global data from DataContext - Krishna's implementation
+  const { groups, fetchGroups } = useData();
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    groupCount: 0,
-    totalOwed: 0,
-    youOwe: 0
-  });
 
-  // Fetch user stats
+  // Fetch groups on mount
   useEffect(() => {
-    const fetchStats = async () => {
-      if (user?.uid) {
-        const result = await getUserGroups(user.uid);
-        if (result.success) {
-          setStats(prev => ({
-            ...prev,
-            groupCount: result.groups.length
-          }));
-        }
-      }
-    };
-    fetchStats();
-  }, [user]);
+    fetchGroups();
+  }, [fetchGroups]);
 
   // Handle logout with Firebase - Pawan's implementation
   const handleLogout = () => {
@@ -77,19 +62,28 @@ const ProfileScreen = ({ navigation }) => {
         {/* Stats Section */}
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{stats.groupCount}</Text>
+            <Text style={styles.statNumber}>{groups.length}</Text>
             <Text style={styles.statLabel}>Groups</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>${stats.totalOwed.toFixed(2)}</Text>
+            <Text style={styles.statNumber}>$0.00</Text>
             <Text style={styles.statLabel}>Total Owed</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>${stats.youOwe.toFixed(2)}</Text>
+            <Text style={styles.statNumber}>$0.00</Text>
             <Text style={styles.statLabel}>You Owe</Text>
           </View>
+        </View>
+
+        {/* App Info */}
+        <View style={styles.appInfo}>
+          <Text style={styles.appName}>SplitGang</Text>
+          <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.teamInfo}>
+            Developed by: Pawan Phuyal, Suraj Subedi, Krishna Subedi
+          </Text>
         </View>
 
         {/* Actions */}
@@ -191,6 +185,29 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     backgroundColor: COLORS.lightGray,
+  },
+  appInfo: {
+    backgroundColor: COLORS.white,
+    padding: SIZES.large,
+    borderRadius: SIZES.base,
+    alignItems: 'center',
+    marginBottom: SIZES.large,
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  appVersion: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginBottom: 8,
+  },
+  teamInfo: {
+    fontSize: 12,
+    color: COLORS.gray,
+    textAlign: 'center',
   },
   actions: {
     marginTop: 'auto',

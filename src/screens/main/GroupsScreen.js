@@ -2,26 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { CustomButton } from '../../components';
 import { COLORS, SIZES } from '../../constants/theme';
-import { useAuth } from '../../context';
-import { getUserGroups } from '../../services';
+import { useAuth, useData } from '../../context';
 
 const GroupsScreen = ({ navigation }) => {
   const { user } = useAuth();
-  const [groups, setGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Using global state from DataContext
+  const { groups, loading, fetchGroups } = useData();
   const [refreshing, setRefreshing] = useState(false);
 
-  // Fetch groups from Firestore - Pawan's implementation
-  const fetchGroups = useCallback(async () => {
-    if (!user?.uid) return;
-    
-    const result = await getUserGroups(user.uid);
-    if (result.success) {
-      setGroups(result.groups);
-    }
-    setLoading(false);
-  }, [user]);
-
+  // Fetch groups on mount
   useEffect(() => {
     fetchGroups();
   }, [fetchGroups]);
@@ -39,8 +28,17 @@ const GroupsScreen = ({ navigation }) => {
       style={styles.groupCard}
       onPress={() => navigation.navigate('GroupDetail', { groupId: item.id })}
     >
-      <Text style={styles.groupName}>{item.name}</Text>
-      <Text style={styles.groupMembers}>{item.members?.length || 0} members</Text>
+      <View style={styles.groupHeader}>
+        <Text style={styles.groupName}>{item.name}</Text>
+        {item.groupCode && (
+          <View style={styles.codeBadge}>
+            <Text style={styles.codeText}>#{item.groupCode}</Text>
+          </View>
+        )}
+      </View>
+      <Text style={styles.groupMembers}>
+        {item.members?.length || 0} / {item.expectedMembers || '?'} members
+      </Text>
       <Text style={styles.groupDescription}>{item.description || 'No description'}</Text>
     </TouchableOpacity>
   );
@@ -50,39 +48,27 @@ const GroupsScreen = ({ navigation }) => {
     <View style={styles.emptyState}>
       <Text style={styles.emptyTitle}>No Groups Yet</Text>
       <Text style={styles.emptyText}>
-        Create a group to start splitting expenses with friends!
+        Create a new group or join an existing one using a group code!
       </Text>
     </View>
   );
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My Groups</Text>
-        </View>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Groups</Text>
+        <Text style={styles.subtitle}>Hello, {user?.name || 'User'}!</Text>
       </View>
 
       <FlatList
         data={groups}
         keyExtractor={(item) => item.id}
         renderItem={renderGroupItem}
-        ListEmptyComponent={renderEmptyState}
+        ListEmptyComponent={!loading && renderEmptyState}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={refreshing || loading}
             onRefresh={onRefresh}
             colors={[COLORS.primary]}
           />
@@ -90,10 +76,20 @@ const GroupsScreen = ({ navigation }) => {
       />
 
       <View style={styles.buttonContainer}>
-        <CustomButton
-          title="Create New Group"
-          onPress={() => navigation.navigate('CreateGroup')}
-        />
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.createButton]}
+            onPress={() => navigation.navigate('CreateGroup')}
+          >
+            <Text style={styles.actionButtonText}>Create Group</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.joinButton]}
+            onPress={() => navigation.navigate('JoinGroup')}
+          >
+            <Text style={styles.joinButtonText}>Join Group</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -115,6 +111,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.black,
   },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.gray,
+    marginTop: 4,
+  },
   listContent: {
     flexGrow: 1,
     padding: SIZES.medium,
@@ -130,11 +131,28 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   groupName: {
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.black,
-    marginBottom: 4,
+    flex: 1,
+  },
+  codeBadge: {
+    backgroundColor: COLORS.primary + '15',
+    paddingHorizontal: SIZES.base,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  codeText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   groupMembers: {
     fontSize: 14,
@@ -169,14 +187,33 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.lightGray,
   },
-  loadingContainer: {
+  buttonRow: {
+    flexDirection: 'row',
+    gap: SIZES.base,
+  },
+  actionButton: {
     flex: 1,
-    justifyContent: 'center',
+    padding: SIZES.medium,
+    borderRadius: SIZES.base,
     alignItems: 'center',
   },
-  loadingText: {
+  createButton: {
+    backgroundColor: COLORS.primary,
+  },
+  joinButton: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  actionButtonText: {
+    color: COLORS.white,
     fontSize: 16,
-    color: COLORS.gray,
+    fontWeight: '600',
+  },
+  joinButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
