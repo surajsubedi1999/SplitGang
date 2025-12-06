@@ -2,18 +2,27 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
-import { GroupsScreen, AddExpenseScreen, ProfileScreen, CreateGroupScreen } from '../screens';
+import { 
+  GroupsScreen, 
+  AddExpenseScreen, 
+  ProfileScreen, 
+  CreateGroupScreen,
+  JoinGroupScreen,
+  GroupDetailScreen 
+} from '../screens';
 import { COLORS } from '../constants/theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Groups Stack Navigator
+// Groups Stack Navigator - includes group detail and join screens
 const GroupsStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="GroupsList" component={GroupsScreen} />
       <Stack.Screen name="CreateGroup" component={CreateGroupScreen} />
+      <Stack.Screen name="JoinGroup" component={JoinGroupScreen} />
+      <Stack.Screen name="GroupDetail" component={GroupDetailScreen} />
     </Stack.Navigator>
   );
 };

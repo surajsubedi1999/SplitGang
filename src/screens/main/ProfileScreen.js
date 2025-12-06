@@ -71,6 +71,15 @@ const ProfileScreen = ({ navigation }) => {
           </View>
         </View>
 
+        {/* App Info */}
+        <View style={styles.appInfo}>
+          <Text style={styles.appName}>SplitGang</Text>
+          <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.teamInfo}>
+            Developed by: Pawan Phuyal, Suraj Subedi, Krishna Subedi
+          </Text>
+        </View>
+
         {/* Actions */}
         <View style={styles.actions}>
           <CustomButton
@@ -170,6 +179,29 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     backgroundColor: COLORS.lightGray,
+  },
+  appInfo: {
+    backgroundColor: COLORS.white,
+    padding: SIZES.large,
+    borderRadius: SIZES.base,
+    alignItems: 'center',
+    marginBottom: SIZES.large,
+  },
+  appName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: 4,
+  },
+  appVersion: {
+    fontSize: 12,
+    color: COLORS.gray,
+    marginBottom: 8,
+  },
+  teamInfo: {
+    fontSize: 12,
+    color: COLORS.gray,
+    textAlign: 'center',
   },
   actions: {
     marginTop: 'auto',

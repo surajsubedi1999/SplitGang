@@ -27,7 +27,7 @@ const GroupsScreen = ({ navigation }) => {
     <View style={styles.emptyState}>
       <Text style={styles.emptyTitle}>No Groups Yet</Text>
       <Text style={styles.emptyText}>
-        Create a group to start splitting expenses with friends!
+        Create a new group or join an existing one using a group code!
       </Text>
     </View>
   );
@@ -36,21 +36,32 @@ const GroupsScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>My Groups</Text>
+        <Text style={styles.subtitle}>Hello, {user?.name || 'User'}!</Text>
       </View>
 
       <FlatList
         data={groups}
         keyExtractor={(item) => item.id}
         renderItem={renderGroupItem}
-        ListEmptyComponent={renderEmptyState}
+        ListEmptyComponent={!loading && renderEmptyState}
         contentContainerStyle={styles.listContent}
       />
 
       <View style={styles.buttonContainer}>
-        <CustomButton
-          title="Create New Group"
-          onPress={() => navigation.navigate('CreateGroup')}
-        />
+        <View style={styles.buttonRow}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.createButton]}
+            onPress={() => navigation.navigate('CreateGroup')}
+          >
+            <Text style={styles.actionButtonText}>Create Group</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.joinButton]}
+            onPress={() => navigation.navigate('JoinGroup')}
+          >
+            <Text style={styles.joinButtonText}>Join Group</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -72,6 +83,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.black,
   },
+  subtitle: {
+    fontSize: 14,
+    color: COLORS.gray,
+    marginTop: 4,
+  },
   listContent: {
     flexGrow: 1,
     padding: SIZES.medium,
@@ -87,11 +103,28 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+  groupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   groupName: {
     fontSize: 18,
     fontWeight: '600',
     color: COLORS.black,
-    marginBottom: 4,
+    flex: 1,
+  },
+  codeBadge: {
+    backgroundColor: COLORS.primary + '15',
+    paddingHorizontal: SIZES.base,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  codeText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '600',
   },
   groupMembers: {
     fontSize: 14,
