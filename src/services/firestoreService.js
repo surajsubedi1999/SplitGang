@@ -18,7 +18,7 @@ import { db } from '../config/firebase';
 
 // ============ GROUP OPERATIONS ============
 
-// Create a new group
+// Create a new group with group code
 export const createGroup = async (groupData, userId) => {
   try {
     const groupRef = await addDoc(collection(db, 'groups'), {
@@ -37,6 +37,52 @@ export const createGroup = async (groupData, userId) => {
     return { success: true, groupId: groupRef.id };
   } catch (error) {
     console.error('Error creating group:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Join a group by group code
+export const joinGroupByCode = async (groupCode, userId) => {
+  try {
+    // Find group with this code
+    const q = query(
+      collection(db, 'groups'),
+      where('groupCode', '==', groupCode)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return { success: false, error: 'Invalid group code. Please check and try again.' };
+    }
+
+    const groupDoc = querySnapshot.docs[0];
+    const groupData = groupDoc.data();
+    const groupId = groupDoc.id;
+
+    // Check if user is already a member
+    if (groupData.members?.includes(userId)) {
+      return { success: false, error: 'You are already a member of this group.' };
+    }
+
+    // Check if group has reached max members
+    if (groupData.expectedMembers && groupData.members?.length >= groupData.expectedMembers) {
+      return { success: false, error: 'This group has reached its maximum number of members.' };
+    }
+
+    // Add user to group
+    await updateDoc(doc(db, 'groups', groupId), {
+      members: arrayUnion(userId),
+      updatedAt: serverTimestamp()
+    });
+
+    // Add group to user's groups
+    await updateDoc(doc(db, 'users', userId), {
+      groups: arrayUnion(groupId)
+    });
+
+    return { success: true, groupId };
+  } catch (error) {
+    console.error('Error joining group:', error);
     return { success: false, error: error.message };
   }
 };

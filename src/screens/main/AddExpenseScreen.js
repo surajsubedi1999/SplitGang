@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { CustomInput, CustomButton } from '../../components';
 import { COLORS, SIZES } from '../../constants/theme';
-import { useAuth } from '../../context';
-import { getUserGroups, createExpense } from '../../services';
+import { useAuth, useData } from '../../context';
+import { createExpense } from '../../services';
 
 const AddExpenseScreen = ({ navigation }) => {
   const { user } = useAuth();
+  // Using global state from DataContext - Krishna's implementation
+  const { groups, fetchGroups } = useData();
   
   // Form state using useState - Suraj's responsibility
   const [description, setDescription] = useState('');
@@ -15,24 +17,11 @@ const AddExpenseScreen = ({ navigation }) => {
   const [splitMethod, setSplitMethod] = useState('equal');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  
-  // Groups fetched from Firestore - Pawan's implementation
-  const [groups, setGroups] = useState([]);
-  const [loadingGroups, setLoadingGroups] = useState(true);
 
-  // Fetch user's groups
+  // Fetch groups on mount
   useEffect(() => {
-    const fetchGroups = async () => {
-      if (user?.uid) {
-        const result = await getUserGroups(user.uid);
-        if (result.success) {
-          setGroups(result.groups);
-        }
-      }
-      setLoadingGroups(false);
-    };
     fetchGroups();
-  }, [user]);
+  }, [fetchGroups]);
 
   // Basic validation
   const validateForm = () => {
@@ -118,9 +107,7 @@ const AddExpenseScreen = ({ navigation }) => {
         {/* Group Selection */}
         <View style={styles.section}>
           <Text style={styles.label}>Select Group</Text>
-          {loadingGroups ? (
-            <Text style={styles.loadingText}>Loading groups...</Text>
-          ) : groups.length === 0 ? (
+          {groups.length === 0 ? (
             <Text style={styles.noGroupsText}>
               No groups available. Create a group first!
             </Text>
@@ -219,10 +206,6 @@ const styles = StyleSheet.create({
     color: COLORS.black,
     marginBottom: SIZES.base,
     fontWeight: '500',
-  },
-  loadingText: {
-    color: COLORS.gray,
-    fontSize: 14,
   },
   noGroupsText: {
     color: COLORS.gray,
