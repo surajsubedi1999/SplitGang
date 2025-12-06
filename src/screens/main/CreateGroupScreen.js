@@ -8,6 +8,11 @@ const generateGroupCode = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+// Generate a random 6-digit group code
+const generateGroupCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 const CreateGroupScreen = ({ navigation }) => {
   // Form state using useState - Suraj's responsibility
   const [groupName, setGroupName] = useState('');
